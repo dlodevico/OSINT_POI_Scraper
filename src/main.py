@@ -45,18 +45,25 @@ async def run_scraper(target_username):
 
 
 def build_results_html(username, results):
-    """Create a simple HTML page showing positive matches."""
+    """Create a polished HTML page showing positive matches."""
     safe_username = html.escape(username)
     positive_matches = filter_positive_results(results)
 
-    if not positive_matches:
-        body = "<p>No matching accounts were found.</p>"
+    if not results:
+        table_rows = "<tr><td colspan='3'>Enter a username to begin.</td></tr>"
     else:
-        rows = "".join(
-            f"<li><a href=\"{url}\" target=\"_blank\">{name}</a></li>"
-            for name, url, _ in positive_matches
+        table_rows = "".join(
+            f"<tr><td>{html.escape(name)}</td><td><span class='badge {status.lower().replace(' ', '-')}'>{html.escape(status)}</span></td><td><a href=\"{html.escape(url)}\" target=\"_blank\">Open</a></td></tr>"
+            for name, url, status in results
         )
-        body = f"<h2>Positive matches for {safe_username}</h2><ul>{rows}</ul>"
+
+    summary_text = (
+        f"<p class='summary'>Showing {len(positive_matches)} positive match(es) for <strong>{safe_username}</strong>.</p>"
+        if username
+        else "<p class='summary'>Search for a username to review potential social accounts.</p>"
+    )
+
+    toggle_checked = "checked" if username else ""
 
     return f"""
 <!DOCTYPE html>
@@ -65,21 +72,99 @@ def build_results_html(username, results):
   <meta charset=\"utf-8\">
   <title>OSINT POI Scraper Results</title>
   <style>
-    body {{ font-family: Arial, sans-serif; margin: 2rem; }}
-    input {{ padding: 0.5rem; width: 18rem; }}
-    button {{ padding: 0.5rem 1rem; }}
-    .card {{ border: 1px solid #ddd; padding: 1rem; border-radius: 8px; max-width: 36rem; }}
+    body {{
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: #e2e8f0;
+    }}
+    .card {{
+      max-width: 860px;
+      margin: 0 auto;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    }}
+    h1 {{ margin-top: 0; }}
+    form {{ display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }}
+    input {{
+      flex: 1;
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid #64748b;
+      background: #111827;
+      color: #f8fafc;
+    }}
+    button {{
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #38bdf8;
+      color: #082f49;
+      cursor: pointer;
+      font-weight: 600;
+    }}
+    .toggle-row {{ display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: #cbd5e1; }}
+    .summary {{ color: #cbd5e1; margin-bottom: 1rem; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
+    th, td {{ padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }}
+    th {{ color: #7dd3fc; cursor: pointer; user-select: none; }}
+    a {{ color: #7dd3fc; text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    .badge {{ display: inline-block; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }}
+    .badge.active {{ background: #14532d; color: #dcfce7; }}
+    .badge.not-found {{ background: #7f1d1d; color: #fee2e2; }}
+    .badge.error, .badge.failed {{ background: #92400e; color: #fef3c7; }}
   </style>
 </head>
 <body>
   <div class=\"card\">
     <h1>OSINT POI Scraper</h1>
+    <p>Search for a username and review matching social accounts.</p>
     <form action=\"/\" method=\"get\">
       <input name=\"username\" placeholder=\"Enter username\" value=\"{safe_username}\" />
       <button type=\"submit\">Search</button>
     </form>
-    {body}
+    <div class=\"toggle-row\">
+      <input type=\"checkbox\" id=\"positive-only\" name=\"positive_only\" {toggle_checked} />
+      <label for=\"positive-only\">Positive matches only</label>
+    </div>
+    {summary_text}
+    <table id=\"results-table\">
+      <thead>
+        <tr>
+          <th data-sort=\"platform\">Platform</th>
+          <th data-sort=\"status\">Status</th>
+          <th data-sort=\"link\">Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {table_rows}
+      </tbody>
+    </table>
   </div>
+  <script>
+    const table = document.getElementById('results-table');
+    const headers = table.querySelectorAll('th');
+    let sortDirection = 1;
+
+    headers.forEach((header) => {{
+      header.addEventListener('click', () => {{
+        const sortKey = header.dataset.sort;
+        const rows = Array.from(table.tBodies[0].rows);
+        rows.sort((a, b) => {{
+          const aText = a.cells[Array.from(headers).indexOf(header)].textContent.trim().toLowerCase();
+          const bText = b.cells[Array.from(headers).indexOf(header)].textContent.trim().toLowerCase();
+          return aText.localeCompare(bText) * sortDirection;
+        }});
+        rows.forEach((row) => table.tBodies[0].appendChild(row));
+        sortDirection *= -1;
+      }});
+    }});
+  </script>
 </body>
 </html>
 """
