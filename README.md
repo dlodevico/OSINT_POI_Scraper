@@ -20,6 +20,16 @@ Run the sample script:
 python src/main.py
 ```
 
+## Demo
+
+To try the local web interface:
+
+```bash
+python src/main.py --server
+```
+
+Then open http://127.0.0.1:8000 in your browser. The page includes a visible version banner and a results table for the scraped account matches.
+
 ## Continuous Integration
 
 A GitHub Actions workflow is included to run Python checks on pushes and pull requests.
