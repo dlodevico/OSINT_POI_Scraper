@@ -109,6 +109,17 @@ def build_results_html(username, results):
     }}
     .toggle-row {{ display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: #cbd5e1; }}
     .summary {{ color: #cbd5e1; margin-bottom: 1rem; }}
+    .version-banner {{
+      display: inline-block;
+      margin-bottom: 1rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: #f59e0b;
+      color: #111827;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
     th, td {{ padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }}
     th {{ color: #7dd3fc; cursor: pointer; user-select: none; }}
@@ -122,6 +133,7 @@ def build_results_html(username, results):
 </head>
 <body>
   <div class=\"card\">
+    <div class=\"version-banner\">Version 2 - Updated UI</div>
     <h1>OSINT POI Scraper</h1>
     <p>Search for a username and review matching social accounts.</p>
     <form action=\"/\" method=\"get\">
@@ -201,9 +213,10 @@ class SearchHandler(BaseHTTPRequestHandler):
         return
 
 
-def start_server(host: str = "127.0.0.1", port: int = 8000):
+def start_server(host: str = "0.0.0.0", port: int = 8000):
     server = ThreadingHTTPServer((host, port), SearchHandler)
     print(f"Serving UI at http://{host}:{port}")
+    print("Accessible on your local network via your computer's IP address")
     server.serve_forever()
 
 
